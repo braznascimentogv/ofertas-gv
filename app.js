@@ -61,11 +61,12 @@
   }
   function setupAds() {
     const client=String(cfg.ADSENSE_CLIENT||'').trim(), top=String(cfg.ADSENSE_SLOT_TOP||'').trim(), bottom=String(cfg.ADSENSE_SLOT_BOTTOM||'').trim();
-    if (!client || !top || !bottom) {
-  $('adTop').hidden = true;
-  $('adBottom').hidden = true;
-  return;
-}; // Não simula anúncios nem inventa IDs de publisher.
+    // Não mostrar caixas vazias antes de configurar anúncios reais.
+    if(!client || !top || !bottom) {
+      ['adTop','adBottom'].forEach(id => { const el=$(id); if(el) el.hidden=true; });
+      return;
+    }
+    ['adTop','adBottom'].forEach(id => { const el=$(id); if(el) el.hidden=false; });
     const s=document.createElement('script');s.async=true;s.crossOrigin='anonymous';s.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+encodeURIComponent(client);document.head.appendChild(s);
     [['adTop',top],['adBottom',bottom]].forEach(([id,slot])=>{const el=$(id);el.innerHTML=`<span>Publicidade</span><ins class="adsbygoogle" style="display:block" data-ad-client="${safe(client)}" data-ad-slot="${safe(slot)}" data-ad-format="auto" data-full-width-responsive="true"></ins>`;try{(window.adsbygoogle=window.adsbygoogle||[]).push({});}catch(e){console.warn('Anúncio indisponível',e);}});
   }
