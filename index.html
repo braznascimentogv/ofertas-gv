@@ -1,35 +1,19 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#075c43">
-  <meta name="description" content="Veja ofertas em destaque e compare preços de supermercados em Governador Valadares. Mais economia no seu dia a dia!">
-  <meta name="application-name" content="Ofertas GV">
-  <link rel="manifest" href="manifest.json"><link rel="icon" href="assets/logo_ofertas_gv.png"><link rel="apple-touch-icon" href="assets/icon-192.png"><link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#075c43"><meta name="description" content="Veja ofertas em destaque e compare preços de supermercados em Governador Valadares.">
+  <meta name="application-name" content="Ofertas GV"><link rel="manifest" href="manifest.json"><link rel="icon" href="assets/icon-192.png"><link rel="apple-touch-icon" href="assets/icon-192.png"><link rel="stylesheet" href="styles.css">
   <title>Ofertas GV — Mais economia no seu dia a dia!</title>
 </head>
-<body>
-  <header class="topbar">
-    <a class="brand" href="./" aria-label="Ofertas GV - início"><img src="assets/logo_ofertas_gv.png" alt=""><span>Ofertas <b>GV</b><small>Mais economia no seu dia a dia!</small></span></a>
-    <button id="installBtn" class="install-btn" hidden>＋ Instalar app</button>
-  </header>
-  <main class="container">
-    <section class="hero"><div><p class="eyebrow">ECONOMIZE NAS COMPRAS</p><h1>Mais ofertas. <span>Mais economia.</span></h1><p>Compare preços dos supermercados de Governador Valadares em um só lugar.</p><button id="heroAllBtn" class="hero-btn" type="button">Ver todas as ofertas ↓</button></div><div class="hero-icon" aria-hidden="true">🛒</div></section>
-
-    <section class="section-head featured-head"><div><h2>⭐ Ofertas em destaque</h2><p id="featuredCount" class="muted">Carregando destaques…</p></div><button id="allBtn" class="primary-btn" type="button">Todas as ofertas <span aria-hidden="true">→</span></button></section>
-    <div id="featured" class="grid" aria-live="polite"><div class="loading-card">Buscando as melhores ofertas…</div></div>
-    <div class="featured-cta"><div><strong>Quer comparar mais preços?</strong><p>Veja o total de ofertas disponíveis e filtre por produto, categoria ou supermercado.</p></div><button id="allBtnBottom" class="primary-btn" type="button">Todas as ofertas →</button></div>
-
-    <section id="allSection" class="all-section" hidden>
-      <div class="section-head all-title"><div><h2>🛍️ Todas as ofertas</h2><p id="statusText" class="muted">Carregando ofertas…</p></div><button id="refreshBtn" class="refresh-btn" type="button">↻ Atualizar</button></div>
-      <div class="toolbar"><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Buscar produto, marca ou supermercado…" autocomplete="off"></label><select id="category" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option></select><select id="store" aria-label="Filtrar por supermercado"><option value="">Todos os supermercados</option></select><select id="sort" aria-label="Ordenar ofertas"><option value="price-asc">Menor preço primeiro</option><option value="price-desc">Maior preço primeiro</option><option value="name">Nome do produto</option></select></div>
-      <div id="offers" class="grid" aria-live="polite"><div class="loading-card">Buscando as ofertas mais recentes…</div></div>
-      <button id="moreBtn" class="more-btn" hidden>Carregar mais ofertas</button>
-    </section>
-    <p class="disclaimer">Ofertas válidas até a data indicada no produto ou enquanto durar o estoque. Preços e condições podem mudar conforme a loja. Imagens ilustrativas. Consulte o folheto original antes de comprar.</p>
-  </main>
-  <footer><img src="assets/logo_ofertas_gv.png" alt=""><span>Ofertas GV · Mais economia no seu dia a dia!</span><a href="#" id="privacyLink">Privacidade</a></footer>
-  <dialog id="privacyDialog"><div class="dialog-content"><button id="closePrivacy" class="close" aria-label="Fechar">×</button><h2>Privacidade</h2><p>Esta versão pública não exige cadastro para consultar ofertas. O app pode carregar imagens de produtos e anúncios de terceiros. Quando a publicidade for ativada, os respectivos fornecedores poderão usar cookies ou tecnologias semelhantes conforme suas políticas.</p><p>Para dúvidas sobre o Ofertas GV, entre em contato com o responsável pelo projeto.</p></div></dialog>
-  <script src="config.js"></script><script src="app.js" defer></script>
-</body></html>
+<body data-page="home">
+<header class="topbar"><a class="brand" href="./" aria-label="Ofertas GV - início"><img src="assets/icon-192.png" alt="Logo Ofertas GV" onerror="this.onerror=null;this.src='assets/logo_ofertas_gv.png'"><span>Ofertas <b>GV</b><small>Mais economia no seu dia a dia!</small></span></a><button id="installBtn" class="install-btn" hidden>＋ Instalar app</button></header>
+<main class="container">
+  <section class="hero"><div><p class="eyebrow">ECONOMIZE NAS COMPRAS</p><h1>Mais ofertas. <span>Mais economia.</span></h1><p>Compare preços dos supermercados de Governador Valadares em um só lugar.</p><a class="hero-btn link-button" href="ofertas.html">Ver todas as ofertas →</a></div><div class="hero-icon" aria-hidden="true">🛒</div></section>
+  <section class="section-head featured-head"><div><h2>⭐ Ofertas em destaque</h2><p id="featuredCount" class="muted">Carregando destaques…</p></div><a id="allBtn" class="primary-btn link-button" href="ofertas.html">Todas as ofertas <span aria-hidden="true">→</span></a></section>
+  <div id="featured" class="grid" aria-live="polite"><div class="loading-card">Buscando as melhores ofertas…</div></div>
+  <div class="featured-cta"><div><strong>Compare preços e encontre a melhor opção</strong><p>Acesse todas as ofertas, filtre por produto ou supermercado e compare os preços lado a lado.</p></div><a class="primary-btn link-button" href="ofertas.html">Comparar ofertas →</a></div>
+  <p class="disclaimer">Ofertas válidas até a data indicada ou enquanto durar o estoque. Preços e condições podem mudar conforme a loja. Imagens ilustrativas; consulte o folheto original.</p>
+</main><footer><img src="assets/icon-192.png" alt=""><span>Ofertas GV · Mais economia no seu dia a dia!</span><a href="#" id="privacyLink">Privacidade</a></footer>
+<dialog id="privacyDialog"><div class="dialog-content"><button id="closePrivacy" class="close" aria-label="Fechar">×</button><h2>Privacidade</h2><p>Esta versão pública não exige cadastro para consultar ofertas. O app pode carregar imagens e anúncios de terceiros. Quando a publicidade for ativada, os fornecedores poderão usar cookies ou tecnologias semelhantes conforme suas políticas.</p><p>Para dúvidas sobre o Ofertas GV, entre em contato com o responsável pelo projeto.</p></div></dialog>
+<script src="config.js"></script><script src="app.js" defer></script></body></html>
