@@ -1,82 +1,24 @@
 (() => {
   'use strict';
-  const cfg = window.OFERTAS_GV_CONFIG || {};
-  const API_URL = String(cfg.API_URL || '').trim();
-  const PAGE_SIZE = 24;
-  const showAllPage = new URLSearchParams(location.search).get('pagina') === 'todas';
-  let lastNotificationSignature = ''; let notificationsOn = false; let notificationTimer = null;
-  let allOffers = [], filteredOffers = [], visibleCount = PAGE_SIZE, deferredInstall = null;
-  const $ = id => document.getElementById(id);
-  const money = n => Number(n || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-  const safe = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const date = s => { if (!s) return 'consulte o folheto'; const a=String(s).split('-'); return a.length===3 ? `${a[2]}/${a[1]}/${a[0]}` : safe(s); };
-  function jsonp(url, timeoutMs=18000) {
-    return new Promise((resolve,reject) => {
-      const cb='ofertasGV_'+Date.now()+'_'+Math.floor(Math.random()*1e6);
-      const script=document.createElement('script'); let timer;
-      const cleanup=()=>{clearTimeout(timer);delete window[cb];script.remove();};
-      window[cb]=data=>{cleanup(); if(data && data.erro) reject(new Error(data.mensagem||'Falha no serviço de ofertas.')); else resolve(data);};
-      script.onerror=()=>{cleanup();reject(new Error('Não foi possível conectar à base de ofertas. Confira a implantação pública do Apps Script.'));};
-      timer=setTimeout(()=>{cleanup();reject(new Error('O serviço demorou para responder. Tente novamente.'));},timeoutMs);
-      script.src=url+(url.includes('?')?'&':'?')+'callback='+encodeURIComponent(cb)+'&_='+Date.now();
-      document.head.appendChild(script);
-    });
-  }
-  function apiUrl(kind) {
-    if (!API_URL || API_URL.includes('COLE_AQUI')) throw new Error('Falta configurar a URL pública do Apps Script no arquivo config.js.');
-    return API_URL+(API_URL.includes('?')?'&':'?')+'api='+encodeURIComponent(kind);
-  }
-  function card(o) {
-    const img=o.imagem_url ? `<img src="${safe(o.imagem_url)}" alt="${safe(o.produto)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder',textContent:'🛍️'}))">` : '<div class="placeholder">🛍️</div>';
-    const discount=Number(o.preco_normal)>Number(o.preco_oferta)&&Number(o.preco_normal)>0?Math.round((1-o.preco_oferta/o.preco_normal)*100):0;
-    return `<article class="product-card"><div class="product-image">${img}</div><div class="image-note">Imagem ilustrativa</div><div class="card-body"><div class="store">${safe(o.supermercado||'Supermercado')}</div><div class="product-name">${safe(o.produto)}</div><div class="pack">${safe([o.marca,o.embalagem].filter(Boolean).join(' · '))}</div>${o.patrocinado?'<span class="tag">Oferta patrocinada</span>':''}${discount?`<span class="tag">-${discount}%</span>`:''}${Number(o.preco_normal)>0?`<div class="old-price">De ${money(o.preco_normal)}</div>`:''}<div class="price">${money(o.preco_oferta)}</div><div class="valid">Válida até ${date(o.validade_fim)}</div>${o.observacao?`<div class="condition">${safe(o.observacao)}</div>`:''}${o.fonte_url?`<a class="source-link" href="${safe(o.fonte_url)}" target="_blank" rel="noopener noreferrer">Abrir folheto ↗</a>`:''}</div></article>`;
-  }
-  function populateFilters() {
-    const categories=[...new Set(allOffers.map(o=>String(o.categoria||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    const stores=[...new Set(allOffers.map(o=>String(o.supermercado||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    $('category').innerHTML='<option value="">Todas as categorias</option>'+categories.map(x=>`<option>${safe(x)}</option>`).join('');
-    $('store').innerHTML='<option value="">Todos os supermercados</option>'+stores.map(x=>`<option>${safe(x)}</option>`).join('');
-  }
-  function filter() {
-    const q=$('search').value.trim().toLocaleLowerCase('pt-BR'),cat=$('category').value,store=$('store').value;
-    filteredOffers=allOffers.filter(o=>{
-      const hay=[o.produto,o.marca,o.embalagem,o.supermercado,o.categoria].join(' ').toLocaleLowerCase('pt-BR');
-      return (!q||hay.includes(q))&&(!cat||o.categoria===cat)&&(!store||o.supermercado===store);
-    });
-    filteredOffers.sort((a,b)=>Number(a.preco_oferta)-Number(b.preco_oferta)); visibleCount=PAGE_SIZE; render();
-  }
-  function render() {
-    const root=$('offers'),visible=filteredOffers.slice(0,visibleCount);
-    root.innerHTML=visible.length?visible.map(card).join(''):'<div class="empty">Nenhuma oferta encontrada com esses filtros.</div>';
-    $('statusText').textContent=`${filteredOffers.length} oferta${filteredOffers.length===1?'':'s'} encontrada${filteredOffers.length===1?'':'s'}`;
-    $('moreBtn').hidden=visibleCount>=filteredOffers.length;
-  }
-  async function loadOffers() {
-    $('statusText').textContent='Carregando ofertas…';$('refreshBtn').disabled=true;
-    try {
-      const data=await jsonp(apiUrl(showAllPage ? 'ofertas' : 'destaques'));
-      if(!Array.isArray(data)) throw new Error('A resposta do serviço de ofertas não está no formato esperado.');
-      allOffers=data;populateFilters();filter();
-      $('pageTitle').textContent=showAllPage?'Todas as ofertas':'Ofertas em destaque';
-      $('homeLink').classList.toggle('active',!showAllPage);$('allLink').classList.toggle('active',showAllPage);
-      lastNotificationSignature=signature(data);
-      if(!data.length) $('offers').innerHTML='<div class="empty">Ainda não há ofertas publicadas e válidas. Volte em breve!</div>';
-    } catch(err) { $('offers').innerHTML=`<div class="empty">${safe(err.message||'Erro ao carregar ofertas.')}<p><button class="refresh-btn" id="retryBtn">Tentar novamente</button></p></div>`; $('statusText').textContent='Não foi possível carregar'; const b=$('retryBtn'); if(b)b.addEventListener('click',loadOffers); }
-    finally {$('refreshBtn').disabled=false;}
-  }
-  function setupAds() {
-    const client=String(cfg.ADSENSE_CLIENT||'').trim(), top=String(cfg.ADSENSE_SLOT_TOP||'').trim(), bottom=String(cfg.ADSENSE_SLOT_BOTTOM||'').trim();
-    if(!client || !top || !bottom) return; // Não simula anúncios nem inventa IDs de publisher.
-    const s=document.createElement('script');s.async=true;s.crossOrigin='anonymous';s.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+encodeURIComponent(client);document.head.appendChild(s);
-    [['adTop',top],['adBottom',bottom]].forEach(([id,slot])=>{const el=$(id);el.innerHTML=`<span>Publicidade</span><ins class="adsbygoogle" style="display:block" data-ad-client="${safe(client)}" data-ad-slot="${safe(slot)}" data-ad-format="auto" data-full-width-responsive="true"></ins>`;try{(window.adsbygoogle=window.adsbygoogle||[]).push({});}catch(e){console.warn('Anúncio indisponível',e);}});
-  }
-  function signature(list){return (list||[]).map(o=>[o.id_oferta,o.produto,o.supermercado,o.preco_oferta,o.validade_fim].join('|')).sort().join('||');}
-  async function refreshForNotifications(){try{const d=await jsonp(apiUrl(showAllPage?'ofertas':'destaques'));const sig=signature(d);if(lastNotificationSignature&&sig!==lastNotificationSignature&&notificationsOn&&'Notification' in window&&Notification.permission==='granted'){const prev=new Set(lastNotificationSignature.split('||').filter(Boolean));const added=(d||[]).filter(o=>!prev.has([o.id_oferta,o.produto,o.supermercado,o.preco_oferta,o.validade_fim].join('|')));if(added.length){new Notification('Novas ofertas no Ofertas GV',{body:added.length===1?(added[0].produto+' — '+money(added[0].preco_oferta)):(added.length+' novas ofertas foram publicadas.')});}}lastNotificationSignature=sig;allOffers=d;populateFilters();filter();}catch(e){console.warn('Verificação de novas ofertas indisponível',e);}}
-  $('notifyBtn').addEventListener('click',async()=>{if(!('Notification' in window)){alert('Este navegador não oferece notificações.');return;}const p=await Notification.requestPermission();if(p!=='granted'){alert('Permissão de notificações não concedida.');return;}notificationsOn=true;lastNotificationSignature=signature(allOffers);$('notifyBtn').textContent='🔔 Notificações ativadas';if(!notificationTimer)notificationTimer=setInterval(refreshForNotifications,60000);alert('Notificações ativadas enquanto esta página estiver aberta.');});
-  $('search').addEventListener('input',filter);$('category').addEventListener('change',filter);$('store').addEventListener('change',filter);$('refreshBtn').addEventListener('click',loadOffers);$('moreBtn').addEventListener('click',()=>{visibleCount+=PAGE_SIZE;render();});
-  $('privacyLink').addEventListener('click',e=>{e.preventDefault();$('privacyDialog').showModal();});$('closePrivacy').addEventListener('click',()=>$('privacyDialog').close());
-  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;$('installBtn').hidden=false;});
-  $('installBtn').addEventListener('click',async()=>{if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$('installBtn').hidden=true;});
-  if('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Service worker não registrado',e)));
-  setupAds();loadOffers();
+  const cfg=window.OFERTAS_GV_CONFIG||{}, API_URL=String(cfg.API_URL||'').trim(), PAGE_SIZE=24, page=document.body.dataset.page||'home', isOffersPage=page==='offers';
+  let allOffers=[],filteredOffers=[],visibleCount=PAGE_SIZE,deferredInstall=null,selected=new Set();
+  const $=id=>document.getElementById(id);
+  const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const safe=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const date=s=>{if(!s)return 'consulte o folheto';const a=String(s).split('-');return a.length===3?`${a[2]}/${a[1]}/${a[0]}`:safe(s)};
+  function jsonp(url,timeoutMs=18000){return new Promise((resolve,reject)=>{const cb='ofertasGV_'+Date.now()+'_'+Math.floor(Math.random()*1e6),script=document.createElement('script');let timer;const cleanup=()=>{clearTimeout(timer);delete window[cb];script.remove()};window[cb]=data=>{cleanup();if(data&&data.erro)reject(new Error(data.mensagem||'Falha no serviço de ofertas.'));else resolve(data)};script.onerror=()=>{cleanup();reject(new Error('Não foi possível conectar à base de ofertas. Confira a implantação pública do Apps Script.'))};timer=setTimeout(()=>{cleanup();reject(new Error('O serviço demorou para responder. Tente novamente.'))},timeoutMs);script.src=url+(url.includes('?')?'&':'?')+'callback='+encodeURIComponent(cb)+'&_='+Date.now();document.head.appendChild(script)})}
+  function apiUrl(kind){if(!API_URL||API_URL.includes('COLE_AQUI'))throw new Error('Falta configurar a URL pública do Apps Script no arquivo config.js.');return API_URL+(API_URL.includes('?')?'&':'?')+'api='+encodeURIComponent(kind)}
+  function card(o,idx){const img=o.imagem_url?`<img src="${safe(o.imagem_url)}" alt="${safe(o.produto)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder',textContent:'🛍️'}))">`:'<div class="placeholder">🛍️</div>';const normal=Number(o.preco_normal),price=Number(o.preco_oferta),discount=normal>price&&normal>0?Math.round((1-price/normal)*100):0;const compare=isOffersPage?`<label class="compare-select"><input type="checkbox" class="compare-check" data-idx="${idx}" ${selected.has(idx)?'checked':''} ${selected.size>=4&&!selected.has(idx)?'disabled':''}><span>Comparar</span></label>`:'';return `<article class="product-card"><div class="product-image">${img}</div><div class="image-note">Imagem ilustrativa</div><div class="card-body"><div class="store">${safe(o.supermercado||'Supermercado')}</div><div class="product-name">${safe(o.produto)}</div><div class="pack">${safe([o.marca,o.embalagem].filter(Boolean).join(' · '))}</div><div class="tags">${o.patrocinado?'<span class="tag">Oferta patrocinada</span>':''}${discount?`<span class="tag discount">-${discount}%</span>`:''}</div>${normal>0?`<div class="old-price">De ${money(normal)}</div>`:''}<div class="price">${money(price)}</div><div class="valid">Válida até ${date(o.validade_fim)}</div>${o.observacao?`<div class="condition">${safe(o.observacao)}</div>`:''}${o.fonte_url?`<a class="source-link" href="${safe(o.fonte_url)}" target="_blank" rel="noopener noreferrer">Abrir folheto ↗</a>`:''}${compare}</div></article>`}
+  function isFeatured(o){return o.destaque===true||String(o.destaque||'').toLowerCase()==='true'||String(o.destaque||'').toLowerCase()==='sim'||Number(o.ordem_destaque)>0}
+  function renderFeatured(){let items=allOffers.filter(isFeatured).sort((a,b)=>(Number(a.ordem_destaque)||999)-(Number(b.ordem_destaque)||999));if(!items.length)items=allOffers.slice().sort((a,b)=>(Number(b.patrocinado)||0)-(Number(a.patrocinado)||0)||Number(a.preco_oferta)-Number(b.preco_oferta));items=items.slice(0,30);$('featured').innerHTML=items.length?items.map(o=>card(o,o._idx)).join(''):'<div class="empty">Nenhuma oferta publicada no momento. Volte em breve!</div>'; $('featuredCount').textContent=items.length?`${items.length} ofertas em destaque`:'Nenhuma oferta disponível';}
+  function populateFilters(){const categories=[...new Set(allOffers.map(o=>String(o.categoria||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));const stores=[...new Set(allOffers.map(o=>String(o.supermercado||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));$('category').innerHTML='<option value="">Todas as categorias</option>'+categories.map(x=>`<option value="${safe(x)}">${safe(x)}</option>`).join('');$('store').innerHTML='<option value="">Todos os supermercados</option>'+stores.map(x=>`<option value="${safe(x)}">${safe(x)}</option>`).join('')}
+  function filter(){if(!isOffersPage)return;const q=$('search').value.trim().toLocaleLowerCase('pt-BR'),cat=$('category').value,store=$('store').value,sort=$('sort').value;filteredOffers=allOffers.filter(o=>{const hay=[o.produto,o.marca,o.embalagem,o.supermercado,o.categoria].join(' ').toLocaleLowerCase('pt-BR');return(!q||hay.includes(q))&&(!cat||o.categoria===cat)&&(!store||o.supermercado===store)});filteredOffers.sort((a,b)=>sort==='price-desc'?Number(b.preco_oferta)-Number(a.preco_oferta):sort==='name'?String(a.produto||'').localeCompare(String(b.produto||''),'pt-BR'):Number(a.preco_oferta)-Number(b.preco_oferta));visibleCount=PAGE_SIZE;renderAll()}
+  function renderAll(){const visible=filteredOffers.slice(0,visibleCount);$('offers').innerHTML=visible.length?visible.map(o=>card(o,o._idx)).join(''):'<div class="empty">Nenhuma oferta encontrada com esses filtros.</div>';$('statusText').textContent=`Exibindo ${visible.length} de ${filteredOffers.length} ofertas filtradas · ${allOffers.length} no total`;$('moreBtn').hidden=visibleCount>=filteredOffers.length;updateCompareBar()}
+  function updateCompareBar(){if(!isOffersPage)return;$('compareBar').hidden=selected.size===0;$('compareCount').textContent=`${selected.size} de 4 ofertas selecionadas`;const b=$('compareBtn');b.disabled=selected.size<2;b.textContent=selected.size<2?'Selecione mais 1 oferta':'Comparar '+selected.size+' ofertas'}
+  function compare(){if(selected.size<2)return;const items=[...selected].map(i=>allOffers[i]);$('compareResults').innerHTML=`<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>Informação</th>${items.map(o=>`<th>${safe(o.produto||'Produto')}</th>`).join('')}</tr></thead><tbody><tr><th>Preço</th>${items.map(o=>`<td class="compare-price">${money(o.preco_oferta)}</td>`).join('')}</tr><tr><th>Supermercado</th>${items.map(o=>`<td>${safe(o.supermercado||'Não informado')}</td>`).join('')}</tr><tr><th>Marca / embalagem</th>${items.map(o=>`<td>${safe([o.marca,o.embalagem].filter(Boolean).join(' · ')||'—')}</td>`).join('')}</tr><tr><th>Validade</th>${items.map(o=>`<td>${date(o.validade_fim)}</td>`).join('')}</tr><tr><th>Condição</th>${items.map(o=>`<td>${safe(o.observacao||'Consulte o folheto')}</td>`).join('')}</tr></tbody></table></div><p class="muted">Compare também a quantidade, a unidade e as condições de cada oferta antes de comprar.</p>`;$('compareDialog').showModal()}
+  async function loadOffers(){if($('featuredCount'))$('featuredCount').textContent='Carregando destaques…';if($('statusText'))$('statusText').textContent='Carregando ofertas…';if($('refreshBtn'))$('refreshBtn').disabled=true;try{const data=await jsonp(apiUrl('ofertas'));if(!Array.isArray(data))throw new Error('A resposta do serviço de ofertas não está no formato esperado.');allOffers=data.map((o,i)=>({...o,_idx:i}));if(isOffersPage){populateFilters();filteredOffers=allOffers.slice();filteredOffers.sort((a,b)=>Number(a.preco_oferta)-Number(b.preco_oferta));visibleCount=PAGE_SIZE;renderAll()}else renderFeatured();if(!data.length){const target=$('featured')||$('offers');target.innerHTML='<div class="empty">Ainda não há ofertas publicadas e válidas. Volte em breve!</div>'}}catch(err){const target=$('featured')||$('offers');target.innerHTML=`<div class="empty">${safe(err.message||'Erro ao carregar ofertas.')}<p><button class="refresh-btn" id="retryBtn">Tentar novamente</button></p></div>`;if($('featuredCount'))$('featuredCount').textContent='Não foi possível carregar';const b=$('retryBtn');if(b)b.addEventListener('click',loadOffers)}finally{if($('refreshBtn'))$('refreshBtn').disabled=false}}
+  function setupAds(){const client=String(cfg.ADSENSE_CLIENT||'').trim(),top=String(cfg.ADSENSE_SLOT_TOP||'').trim(),bottom=String(cfg.ADSENSE_SLOT_BOTTOM||'').trim();if(!client||!top||!bottom)return;const s=document.createElement('script');s.async=true;s.crossOrigin='anonymous';s.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+encodeURIComponent(client);document.head.appendChild(s)}
+  if(isOffersPage){['search','category','store','sort'].forEach(id=>$(id).addEventListener(id==='search'?'input':'change',filter));$('refreshBtn').addEventListener('click',loadOffers);$('moreBtn').addEventListener('click',()=>{visibleCount+=PAGE_SIZE;renderAll()});$('offers').addEventListener('change',e=>{const cb=e.target.closest('.compare-check');if(!cb)return;const idx=Number(cb.dataset.idx);if(cb.checked){if(selected.size>=4){cb.checked=false;return}selected.add(idx)}else selected.delete(idx);renderAll()});$('compareBtn').addEventListener('click',compare);$('clearCompare').addEventListener('click',()=>{selected.clear();renderAll()});$('closeCompare').addEventListener('click',()=>$('compareDialog').close())}
+  if($('privacyLink'))$('privacyLink').addEventListener('click',e=>{e.preventDefault();$('privacyDialog').showModal()});if($('closePrivacy'))$('closePrivacy').addEventListener('click',()=>$('privacyDialog').close());
+  const installDialog=$('installDialog');const installBtn=$('installBtn');const isInstalledMode=()=>window.matchMedia('(display-mode: standalone)').matches||window.matchMedia('(display-mode: minimal-ui)').matches||window.navigator.standalone===true;const hideInstallButton=()=>{if(installBtn)installBtn.hidden=true};const closeInstall=()=>{if(installDialog&&installDialog.open)installDialog.close()};if(isInstalledMode())hideInstallButton();if($('closeInstall'))$('closeInstall').addEventListener('click',closeInstall);if($('closeInstallBottom'))$('closeInstallBottom').addEventListener('click',closeInstall);window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;if(installBtn&&!isInstalledMode()){installBtn.hidden=false;installBtn.textContent='＋ Instalar app'}});window.addEventListener('appinstalled',()=>{deferredInstall=null;hideInstallButton()});if(installBtn)installBtn.addEventListener('click',async()=>{if(isInstalledMode()){hideInstallButton();return}if(deferredInstall){deferredInstall.prompt();try{const choice=await deferredInstall.userChoice;if(choice&&choice.outcome==='accepted')hideInstallButton()}catch(e){}deferredInstall=null;return}if(installDialog)installDialog.showModal()});if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Service worker não registrado',e)));setupAds();loadOffers();
 })();
