@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ofertas GV | Todas as ofertas</title>
+  <meta name="theme-color" content="#075c43">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="ofertas">
+  <header class="topo">
+    <div class="marca">
+      <span class="logo">🛒</span>
+      <div><strong>Ofertas GV</strong><small>Mais economia no seu dia a dia!</small></div>
+    </div>
+    <nav>
+      <a href="index.html">Início</a>
+      <button id="btnNotif" class="btn-notif">🔔 Ativar notificações</button>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Todas as ofertas</h1>
+    <p class="sub">Pesquise, filtre e compare preços de supermercados de Governador Valadares.</p>
+    <div class="ferramentas">
+      <input type="search" id="busca" placeholder="🔍 Buscar produto, marca…">
+      <select id="filtroCategoria"><option value="">Todas as categorias</option></select>
+      <select id="filtroLoja"><option value="">Todos os supermercados</option></select>
+      <select id="ordem">
+        <option value="">Ordem padrão</option>
+        <option value="menor">Menor preço</option>
+        <option value="maior">Maior preço</option>
+      </select>
+    </div>
+    <p id="contador" class="sub"></p>
+    <div id="lista" class="grade"><p class="carregando">Carregando ofertas…</p></div>
+  </main>
+
+  <div id="barraComparar" class="barra-comparar">
+    <span id="contSelecionadas">0 oferta(s) selecionada(s)</span>
+    <button class="comparar" id="btnComparar">Comparar selecionadas</button>
+    <button class="limpar" id="btnLimpar">Limpar seleção</button>
+  </div>
+
+  <div id="modalComparar" class="modal">
+    <div class="caixa">
+      <button class="fechar" id="btnFechar">✕</button>
+      <h2>Comparar ofertas</h2>
+      <div id="tabelaComparar"></div>
+    </div>
+  </div>
+
+  <div id="ofgv-notif-status" class="notif-status"></div>
+
+  <footer>
+    <p><strong>Ofertas GV · Mais economia no seu dia a dia!</strong></p>
+    <p>As ofertas divulgadas são retiradas dos folhetos publicados nos sites oficiais dos supermercados, sendo este aplicativo de mera consulta ao usuário. O Ofertas GV não possui nenhum vínculo com qualquer estabelecimento comercial.</p>
+    <p>Todas as imagens são meramente ilustrativas. As ofertas estão de acordo com a validade e as observações contidas nos folhetos, com validade conforme a data indicada no folheto e/ou enquanto durar o estoque.</p>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

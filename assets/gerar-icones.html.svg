@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Gerar ícones do Ofertas GV</title></head>
+<body style="font-family:Arial;text-align:center;padding:40px">
+  <h1>Gerar ícones do app</h1>
+  <p>Clique no botão. Serão baixados <b>icon-192.png</b> e <b>icon-512.png</b> — coloque os dois dentro da pasta <b>assets</b> do repositório.</p>
+  <canvas id="c" width="512" height="512" style="border-radius:24px;box-shadow:0 4px 14px rgba(0,0,0,.2);margin:20px 0"></canvas>
+  <br>
+  <button id="btn" style="background:#08734f;color:#fff;border:none;padding:12px 20px;border-radius:8px;font-weight:bold;cursor:pointer">Baixar os dois ícones</button>
+  <script>
+    var c = document.getElementById('c'), ctx = c.getContext('2d');
+    var g = ctx.createLinearGradient(0, 0, 512, 512);
+    g.addColorStop(0, '#075c43'); g.addColorStop(1, '#0a8a63');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(96, 0); ctx.arcTo(512, 0, 512, 512, 96); ctx.arcTo(512, 512, 0, 512, 96);
+    ctx.arcTo(0, 512, 0, 0, 96); ctx.arcTo(0, 0, 512, 0, 96); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 26; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(96, 128); ctx.lineTo(150, 128); ctx.lineTo(206, 340); ctx.lineTo(392, 340); ctx.lineTo(436, 190); ctx.lineTo(180, 190);
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(232, 404, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(372, 404, 26, 0, Math.PI * 2); ctx.fill();
+    document.getElementById('btn').addEventListener('click', function () {
+      [192, 512].forEach(function (tam) {
+        var fora = document.createElement('canvas');
+        fora.width = tam; fora.height = tam;
+        fora.getContext('2d').drawImage(c, 0, 0, tam, tam);
+        var a = document.createElement('a');
+        a.download = 'icon-' + tam + '.png';
+        a.href = fora.toDataURL('image/png');
+        a.click();
+      });
+    });
+  </script>
+</body>
+</html>
