@@ -1,12 +1,12 @@
-/* Ofertas GV — configuração do app (PWA hospedado no GitHub Pages) */
-const CONFIG = {
-  // Cole aqui a URL do aplicativo da web implantado no Google Apps Script
-  // (editor do Apps Script > Implantar > Gerenciar implantações > copiar a URL terminada em /exec)
-  WEB_APP_URL: "COLE_AQUI_A_URL_DO_APPS_SCRIPT",
-
-  NOME_APP: "Ofertas GV",
-  CIDADE: "Governador Valadares",
-
-  // Intervalo de verificação de novas ofertas (notificações)
-  INTERVALO_NOTIFICACAO_MS: 5 * 60 * 1000
+/* CONFIGURAÇÃO DO PWA
+ * Cole a URL /exec da implantação pública do Google Apps Script em API_URL.
+ * Exemplo: https://script.google.com/macros/s/SEU_ID_DE_IMPLANTACAO/exec
+ * Não coloque aqui senhas, chaves Gemini ou dados administrativos.
+ */
+window.OFERTAS_GV_CONFIG = {
+  API_URL: "https://script.google.com/macros/s/AKfycbw4isDd3PxgyT_KA_FI4ocvaJPXmu3D3qaIY9hz30Wp_kD-y4_SmJnBDVpKNn1E80Qj/exec",
+  // Publicidade: preencher somente depois de criar/obter os dados reais da conta e dos blocos de anúncio.
+  ADSENSE_CLIENT: "",
+  ADSENSE_SLOT_TOP: "",
+  ADSENSE_SLOT_BOTTOM: ""
 };
